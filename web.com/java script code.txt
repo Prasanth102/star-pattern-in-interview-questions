@@ -1,0 +1,75 @@
+const transactionForm = document.getElementById('transactionForm');
+const transactionList = document.getElementById('transactionList');
+const expenseChartCanvas = document.getElementById('expenseChart');
+let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+
+function displayTransactions() {
+  transactionList.innerHTML = '';
+  transactions.forEach((transaction, index) => {
+    const li = document.createElement('li');
+    li.innerHTML = `
+      <span>${transaction.amount} - ${transaction.description} - ${transaction.date}</span>
+      <button onclick="deleteTransaction(${index})">Delete</button>
+    `;
+    transactionList.appendChild(li);
+  });
+  updateChart();
+}
+
+function deleteTransaction(index) {
+  transactions.splice(index, 1);
+  localStorage.setItem('transactions', JSON.stringify(transactions));
+  displayTransactions();
+}
+
+function updateChart() {
+  const months = Array(12).fill(0);
+  transactions.forEach(transaction => {
+    const month = new Date(transaction.date).getMonth();
+    months[month] += transaction.amount;
+  });
+
+  const chart = new Chart(expenseChartCanvas, {
+    type: 'bar',
+    data: {
+      labels: [
+        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      ],
+      datasets: [{
+        label: 'Monthly Expenses',
+        data: months,
+        backgroundColor: 'rgba(0, 123, 255, 0.6)',
+        borderColor: 'rgba(0, 123, 255, 1)',
+        borderWidth: 1
+      }]
+    },
+    options: {
+      scales: {
+        y: {
+          beginAtZero: true
+        }
+      }
+    }
+  });
+}
+
+transactionForm.addEventListener('submit', function (event) {
+  event.preventDefault();
+
+  const amount = parseFloat(document.getElementById('amount').value);
+  const date = document.getElementById('date').value;
+  const description = document.getElementById('description').value;
+
+  if (amount && date && description) {
+    transactions.push({ amount, date, description });
+    localStorage.setItem('transactions', JSON.stringify(transactions));
+    displayTransactions();
+    transactionForm.reset();
+  } else {
+    alert('Please fill all fields.');
+  }
+});
+
+
+displayTransactions();
